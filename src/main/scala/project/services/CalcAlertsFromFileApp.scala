@@ -6,7 +6,7 @@ import org.apache.spark.sql.functions.{avg, col, current_date, current_timestamp
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import org.springframework.kafka.config.TopicBuilder
+
 
 
 object CalcAlertsFromFileApp extends App {
