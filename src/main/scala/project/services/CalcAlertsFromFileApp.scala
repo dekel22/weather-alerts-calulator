@@ -2,7 +2,14 @@ package project.services
 
 import project.model.{Farm, NormalizedStationCollectedData}
 import org.apache.spark.sql.{Encoders, SparkSession}
-import org.apache.spark.sql.functions.{avg, col, current_date, current_timestamp, date_sub, element_at, from_json, lit, struct, sum, to_json}
+import org.apache.spark.sql.functions.{avg, col, current_date, current_timestamp, date_sub, element_at, from_json, lit, sum}
+
+import java.nio.file.FileSystems
+import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.catalyst.dsl.expressions.{DslExpression, StringToAttributeConversionHelper}
+import org.apache.spark.sql.streaming.StreamingQueryException
+import org.apache.spark.sql.types.StringType
+import org.joda.time.DateTime
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -10,7 +17,7 @@ import java.time.format.DateTimeFormatter
 
 
 object CalcAlertsFromFileApp extends App {
-  val bootstrapServer = "https://35.225.147.228:9092";
+  val bootstrapServer = "cnt7-naya-cdh63:9092";
   val sparkSession: SparkSession = SparkSession.builder.master("local[*]").appName("example_app").getOrCreate
   val farmSchema = Encoders.product[Farm].schema
   val farms = sparkSession.read.schema(farmSchema).json("farms\\*")
@@ -36,12 +43,11 @@ object CalcAlertsFromFileApp extends App {
     withColumn("warm_handle",col("warm_sensitivity")-col("warm_level"))
   val warmAlertsDF=DfWithHandle.filter(col("warm_handle")<0).select(col("email"),col("name"),col("crops"))
 
-  warmAlertsDF.select(to_json(struct("*")).as("value"))
-    .selectExpr("CAST(value AS STRING)")
+  warmAlertsDF.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)")
     .write
     .format("kafka")
-    .option("kafka.bootstrap.servers", bootstrapServer)
-    .option("topic", "dry_alerts")
+    .option("kafka.bootstrap.servers", "host1:port1,host2:port2")
+    .option("topic", "topic1")
     .save()
 
     sparkSession.close

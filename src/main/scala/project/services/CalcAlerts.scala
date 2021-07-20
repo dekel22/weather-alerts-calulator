@@ -1,15 +1,20 @@
 package project.services
 import project.model.{Farm, NormalizedStationCollectedData}
 import com.sun.org.slf4j.internal.LoggerFactory
+import org.apache.spark.sql.catalyst.dsl.expressions.{DslExpression, StringToAttributeConversionHelper}
 import org.apache.spark.sql.{Encoders, SparkSession}
-import org.apache.spark.sql.functions.{avg, col, element_at, from_json, lit, struct, sum, to_json}
+import org.apache.spark.sql.functions.{avg, col, current_timestamp, element_at, expr, from_json, lit, struct, sum, to_json}
 import org.apache.spark.sql.types.StringType
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+
+
+
+
 object CalcAlerts extends App {
-  val bootstrapServer = "https://35.225.147.228:9092";
+  val bootstrapServer = "https://34.135.62.71:9092";
   val sparkSession: SparkSession = SparkSession.builder.master("local[*]").appName("example_app").getOrCreate
   val farmSchema = Encoders.product[Farm].schema
   val farms = sparkSession.read.schema(farmSchema).json("farms\\*")
@@ -18,13 +23,11 @@ object CalcAlerts extends App {
 
   val schema = Encoders.product[NormalizedStationCollectedData].schema
   val inputDF = sparkSession
-    .readStream
+    .read
     .format("kafka")
     .option("kafka.bootstrap.servers", bootstrapServer)
-    .option("subscribe", "weather_info_verified_data")
-    .load
-    //.filter last3 hours
-    .select(col("value").cast(StringType).alias("value"))
+    .option("subscribe", "weather_info_latest_raw_data").load.
+    select(col("value").cast(StringType).alias("value"))
 
 
     val DF = inputDF
